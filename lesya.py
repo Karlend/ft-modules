@@ -9,9 +9,6 @@ class AutoLesya(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
 
-	async def client_ready(self, client, db):
-		self._me = await client.get_me()
-
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
 			return
