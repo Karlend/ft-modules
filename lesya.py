@@ -14,11 +14,11 @@ lesya = 757724042 # ID бота
 class AutoLesya(loader.Module):
 	"""Автоматизация функций Бот Леся"""
 	async def client_ready(self, client, db):
-        self._me = await client.get_me()
+		self._me = await client.get_me()
 
 	async def watcher(self, message):
-        if not isinstance(message, types.Message):
-            return
+		if not isinstance(message, types.Message):
+			return
 		chat_id = utils.get_chat_id(message)
 		if chat_id != lesya:
 			return
