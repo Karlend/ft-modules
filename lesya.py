@@ -23,7 +23,7 @@ class AutoLesya(loader.Module):
 		if chat_id != lesya:
 			return
 		logger.debug("Got message from bot")
-		text = message.text
+		text = message.text or ""
 		if not text:
 			logger.debug("Lesya didn't send text")
 			return
