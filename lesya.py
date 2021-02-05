@@ -12,8 +12,7 @@ class AutoLesyaMod(loader.Module):
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
 			return
-		print("MSG info - ", message)
-		chat_id = message.chat.id
+		chat_id = utils.get_chat_id(message)
 		if chat_id != lesya:
 			return
 		text = message.text
