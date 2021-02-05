@@ -8,7 +8,8 @@ from telethon import types
 
 logger = logging.getLogger("Lesya")
 
-lesya = 757724042 # ID бота
+lesya = 757724042  # ID бота
+
 
 @loader.tds
 class AutoLesya(loader.Module):
