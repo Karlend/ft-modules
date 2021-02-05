@@ -18,5 +18,5 @@ class AutoLesyaMod(loader.Module):
 		text = message.text
 		if not text:
 			return
-		if text.find("Ваши питомцы проиграли") or text.find("Ваши питомцы победили"):
+		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1):
 			await utils.answer(message, "Бой")
