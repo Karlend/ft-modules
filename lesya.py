@@ -1,10 +1,5 @@
 from .. import loader, utils
-import logging
-import datetime
-import time
 from telethon import types
-
-logger = logging.getLogger("Lesya")
 
 lesya = 757724042  # ID бота
 
@@ -19,13 +14,11 @@ class AutoLesya(loader.Module):
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
 			return
-		chat_id = utils.get_chat_id(message)
+		chat_id = message.chat.id
 		if chat_id != lesya:
 			return
-		logger.debug("Got message from bot")
-		text = message.text or ""
+		text = message.text
 		if not text:
-			logger.debug("Lesya didn't send text")
 			return
 		if text.find("Ваши питомцы проиграли") or text.find("Ваши питомцы победили"):
 			await utils.answer(message, "Бой")
