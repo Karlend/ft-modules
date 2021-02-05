@@ -6,7 +6,8 @@ lesya = 757724042  # ID бота
 
 @loader.tds
 class AutoLesya(loader.Module):
-	"""Автоматизация функций Бот Леся"""
+	"""Бот для авто игры в Леся Бот"""
+	strings = {"name": "LesyaBot"}
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
