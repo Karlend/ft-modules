@@ -5,7 +5,7 @@ lesya = 757724042  # ID бота
 
 
 @loader.tds
-class AutoLesya(loader.Module):
+class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
 
