@@ -51,7 +51,7 @@ class AutoLesyaMod(loader.Module):
 				await message.client.send_message(lesya, "Вип бонус")
 			if stats.get("premium"):
 				await message.client.send_message(lesya, "Премиум бонус")
-		if stats.get("work") and (now > times.get("work")): # todo: Получение времени для следующей работы
+		if stats.get("work") and (now > times.get("work")):
 			for i in range(7):
 				if now > times.get("work"):
 					await message.client.send_message(lesya, "Работать")
@@ -87,7 +87,8 @@ class AutoLesyaMod(loader.Module):
 		if (work != -1):
 			pos = work + len(str_f) + 1 # позиция + длина + пробел	
 			need = self.convert(text[pos:])
-			times["work"] = now + need + 10
+			times["work"] = now + need + 5
+			await utils.answer(message, "Пропишу через " + str(need) + " сек")
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
