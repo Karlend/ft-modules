@@ -86,6 +86,7 @@ class AutoLesyaMod(loader.Module):
 			pos = work + len(str_f) + 1 # позиция + длина + пробел	
 			need = self.convert(text[pos:])
 			times["work"] = now + need + 5
+			print("Got msg with text - " + text)
 			#await utils.answer(message, "Пропишу через " + str(need) + " сек")
 		elif (text.find("рабочий день закончен") != 1):
 			times["work"] = now + 1
