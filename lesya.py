@@ -14,7 +14,7 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
-		message.client.send_message(name, "Профиль")
+		await message.client.send_message(lesya, "Профиль")
 
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
