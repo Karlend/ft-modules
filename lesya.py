@@ -39,6 +39,6 @@ class AutoLesyaMod(loader.Module):
 			await message.client.send_message(lesya, "Бонус")
 			if stats.vip:
 				await message.client.send_message(lesya, "Вип бонус")
-			if stats.premium
+			if stats.premium:
 				await message.client.send_message(lesya, "Премиум бонус")
 			next_bonus = now + 60 * 60 * 8
