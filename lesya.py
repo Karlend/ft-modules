@@ -51,10 +51,9 @@ class AutoLesyaMod(loader.Module):
 				await message.client.send_message(lesya, "Вип бонус")
 			if stats.get("premium"):
 				await message.client.send_message(lesya, "Премиум бонус")
-		if stats.get("work") and (now > times.get("work")):
-			for i in range(7):
-				if now > times.get("work"):
-					await message.client.send_message(lesya, "Работать")
+		#if stats.get("work") and (now > times.get("work")):
+			#times["work"] = now + 1
+			#await message.client.send_message(lesya, "Работать")
 		# Приём сообщений от бота
 		if not isinstance(message, types.Message):
 			return
