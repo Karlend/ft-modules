@@ -10,6 +10,10 @@ times = {
 }
 stats = {}
 
+formats = {
+	"bonus": "Вы сможете получить бонус через "
+}
+
 @loader.tds
 class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
@@ -37,6 +41,11 @@ class AutoLesyaMod(loader.Module):
 			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
 			stats["work"] = text.find("Работа: ") != 1
 			stats["clan"] = text.find("Клан: ") != 1
+		if (text.find(formats.get("bonus")) != -1): # Бонус будет через n период времени
+			str = formats.get("bonus")
+			pos = text.find(str) + len(str)
+			need = text[:pos]
+			utils.answer(message, need)
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
 		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
