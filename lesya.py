@@ -45,15 +45,21 @@ class AutoLesyaMod(loader.Module):
 			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
 			stats["work"] = text.find("Работа: ") != 1
 			stats["clan"] = text.find("Клан: ") != 1
-		bonus = text.replace("станет", "будет").find(formats.get("bonus2"))
+		# Начало для бонуса
+		text_normal = text.replace("станет", "будет")
+		str_f = formats.get("bonus2")
+		bonus = text_normal.find(str)
 		if bonus == -1:
-			bonus = text.find(formats.get("bonus"))
-		if (text.find(bonus) != -1): # Бонус будет через n период времени
-			pos = text.find(bonus) + len(bonus)
-			need = "Это:" + text[pos:]
+			str_f = formats.get("bonus")
+			bonus = text_normal.find(str_f)
+		if (bonus != -1): # Бонус будет через n период времени
+			pos = bonus + len(str_f)
+			need = "Это:" + text_normal[pos:]
 			await utils.answer(message, need)
+		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
+		# Автосбор бонусов
 		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
 			times["bonus"] = now + 60 * 60 * 8
 			await message.client.send_message(lesya, "Бонус")
