@@ -78,7 +78,7 @@ class AutoLesyaMod(loader.Module):
 		if (bonus == -1):
 			str_f = formats.get("bonus")
 			bonus = text_normal.find(str_f)
-		if (bonus != -1): # Бонус будет через n период времени
+		if (bonus != -1) and (text_normal.find("VIP") == -1 and text_normal.find("PREMIUM") == -1): # Бонус будет через n период времени
 			pos = bonus + len(str_f) + 1 # позиция + длина + пробел
 			need = self.convert(text_normal[pos:])
 			times["bonus"] = now + need + 60
