@@ -25,7 +25,7 @@ class AutoLesyaMod(loader.Module):
 		now = time.time()
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
-		if next_bonus and (now > next_bonus) and (next_bonus > 0):
+		if False: #next_bonus and (now > next_bonus) and (next_bonus > 0):
 			await message.client.send_message(lesya, "Бонус")
 			await message.client.send_message(lesya, "Вип бонус")
 			await message.client.send_message(lesya, "Премиум бонус")
