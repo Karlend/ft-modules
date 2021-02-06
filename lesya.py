@@ -4,12 +4,11 @@ from telethon import types
 
 lesya = 757724042  # ID бота
 
-next_bonus = 0
-
 @loader.tds
 class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
+	next_bonus = 0
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
@@ -28,7 +27,7 @@ class AutoLesyaMod(loader.Module):
 		now = time.time()
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
-		if (now > next_bonus) and (next_bonus > 0):
+		if watcher and (now > next_bonus) and (next_bonus > 0):
 			await message.client.send_message(lesya, "Бонус")
 			await message.client.send_message(lesya, "Вип бонус")
 			await message.client.send_message(lesya, "Премиум бонус")
