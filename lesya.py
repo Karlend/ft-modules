@@ -11,11 +11,9 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
+		client.send_message(lesya, "Профиль")
 
 	async def watcher(self, message):
-		if self.init is None:
-			await message.client.send_message(lesya, "Профиль")
-			self.init = True
 		if not isinstance(message, types.Message):
 			return
 		chat_id = utils.get_chat_id(message)
