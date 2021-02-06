@@ -52,8 +52,7 @@ class AutoLesyaMod(loader.Module):
 			if stats.get("premium"):
 				await message.client.send_message(lesya, "Премиум бонус")
 		if stats.get("work") and (now > times.get("work")): # todo: Получение времени для следующей работы
-			times["work"] = now + 60 * 13 # раз в 13 минут
-			for i in range(5):
+			for i in range(7):
 				if now > times.get("work"):
 					await message.client.send_message(lesya, "Работать")
 		# Приём сообщений от бота
