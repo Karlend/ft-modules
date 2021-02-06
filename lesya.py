@@ -48,7 +48,7 @@ class AutoLesyaMod(loader.Module):
 		# Начало для бонуса
 		text_normal = text.replace("станет", "будет")
 		str_f = formats.get("bonus2")
-		bonus = text_normal.find(str)
+		bonus = text_normal.find(str_f)
 		if bonus == -1:
 			str_f = formats.get("bonus")
 			bonus = text_normal.find(str_f)
