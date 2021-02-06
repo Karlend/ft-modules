@@ -12,7 +12,8 @@ times = {
 stats = {}
 
 formats = {
-	"bonus": "Вы сможете получить бонус через"
+	"bonus": "Вы сможете получить бонус через",
+	"bonus2": "бонус будет доступен через"
 }
 
 @loader.tds
@@ -44,9 +45,11 @@ class AutoLesyaMod(loader.Module):
 			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
 			stats["work"] = text.find("Работа: ") != 1
 			stats["clan"] = text.find("Клан: ") != 1
-		str = formats.get("bonus")
-		if (text.find(str) != -1): # Бонус будет через n период времени
-			pos = text.find(str) + len(str)
+		bonus = text.replace("станет", "будет").find(formats.get("bonus2"))
+		if bonus == -1:
+			bonus = text.find(formats.get("bonus"))
+		if (text.find(bonus) != -1): # Бонус будет через n период времени
+			pos = text.find(bonus) + len(bonus)
 			need = "Это:" + text[pos:]
 			await utils.answer(message, need)
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
