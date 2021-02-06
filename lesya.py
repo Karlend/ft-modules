@@ -79,7 +79,7 @@ class AutoLesyaMod(loader.Module):
 			bonus = text_normal.find(str_f)
 		if (bonus != -1): # Бонус будет через n период времени
 			pos = bonus + len(str_f) + 1 # позиция + длина + пробел
-			need = convert(text_normal[pos:])
+			need = self.convert(text_normal[pos:])
 			times["bonus"] = now + need
 			await utils.answer(message, "Обновил. Запущу бонус через " + need + " сек")
 		# Автобой питомцев
