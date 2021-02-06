@@ -22,9 +22,20 @@ class AutoLesyaMod(loader.Module):
 	strings = {"name": "LesyaBot"}
 
 	async def client_ready(self, client, db):
-		self._me = await client.get_me()
+		self._me = await client.get_me()	
 		# await client(GetStateRequest())
 		await client.send_message(lesya, "Профиль")
+
+	def convert(str)
+		arr = str.split(":")
+		last = len(arr)
+		if last == 3: # H:M:S
+			return arr[0] * 3600 + arr[1] * 60 + arr[2]
+		else if last == 2:
+			return arr[0] * 60 + arr[1]
+		else:
+			return arr[0]
+			
 
 	async def watcher(self, message):
 		global init
@@ -53,9 +64,10 @@ class AutoLesyaMod(loader.Module):
 			str_f = formats.get("bonus")
 			bonus = text_normal.find(str_f)
 		if (bonus != -1): # Бонус будет через n период времени
-			pos = bonus + len(str_f)
-			need = "Это:" + text_normal[pos:]
-			await utils.answer(message, need)
+			pos = bonus + len(str_f) + 1 # позиция + длина + пробел
+			need = convert(text_normal[pos:])
+			times["bonus"] = now + need
+			await utils.answer(message, "Обновил. Запущу бонус через " + need + " сек")
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
