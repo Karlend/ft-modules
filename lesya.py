@@ -3,7 +3,6 @@ import time # time.time() для времени. Используется для
 from telethon import types
 
 lesya = 757724042  # ID бота
-name = "Bot Lesya" # Имя бота
 
 next_bonus = 0
 
@@ -28,7 +27,7 @@ class AutoLesyaMod(loader.Module):
 		now = time.time()
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
-		if (next_bonus < now) and (next_bonus > 0):
+		if (now > next_bonus) and (next_bonus > 0):
 			await message.client.send_message(lesya, "Бонус")
 			await message.client.send_message(lesya, "Вип бонус")
 			await message.client.send_message(lesya, "Премиум бонус")
