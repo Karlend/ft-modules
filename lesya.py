@@ -63,7 +63,6 @@ class AutoLesyaMod(loader.Module):
 		text = message.text
 		if not text:
 			return
-		now = time.time()
 		if (text.find("Ваш профиль:") != -1): # Инфа по профилю привет
 			stats["has"] = True
 			stats["premium"] = text.find("Статус: Premium") != 1
