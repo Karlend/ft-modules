@@ -13,7 +13,8 @@ stats = {}
 
 formats = {
 	"bonus": "Вы сможете получить бонус через",
-	"bonus2": "бонус будет доступен через"
+	"bonus2": "бонус будет доступен через",
+	"work": "Вы сможете работать через"
 }
 
 @loader.tds
@@ -52,8 +53,9 @@ class AutoLesyaMod(loader.Module):
 				await message.client.send_message(lesya, "Премиум бонус")
 		if stats.get("work") and (now > times.get("work")): # todo: Получение времени для следующей работы
 			times["work"] = now + 60 * 13 # раз в 13 минут
-			for i in range(3):
-				await message.client.send_message(lesya, "Работать")
+			for i in range(5):
+				if now > times.get("work"):
+					await message.client.send_message(lesya, "Работать")
 		# Приём сообщений от бота
 		if not isinstance(message, types.Message):
 			return
@@ -73,13 +75,19 @@ class AutoLesyaMod(loader.Module):
 		text_normal = text.replace("станет", "будет")
 		str_f = formats.get("bonus2")
 		bonus = text_normal.find(str_f)
-		if bonus == -1:
+		if (bonus == -1):
 			str_f = formats.get("bonus")
 			bonus = text_normal.find(str_f)
 		if (bonus != -1): # Бонус будет через n период времени
 			pos = bonus + len(str_f) + 1 # позиция + длина + пробел
 			need = self.convert(text_normal[pos:])
 			times["bonus"] = now + need + 60
+		# Время для работы
+		str_f = formats.get("work")
+		if (text.find(str_f) != 1):
+			pos = bonus + len(str_f) + 1 # позиция + длина + пробел	
+			need = self.convert(text[pos:])
+			times["work"] = now + need + 10
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
