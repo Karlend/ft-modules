@@ -26,7 +26,7 @@ class AutoLesyaMod(loader.Module):
 		# await client(GetStateRequest())
 		await client.send_message(lesya, "Профиль")
 
-	def convert(str):
+	def convert(self, str):
 		arr = str.split(":")
 		last = len(arr)
 		if last == 3: # H:M:S
