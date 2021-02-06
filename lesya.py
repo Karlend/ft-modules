@@ -3,6 +3,7 @@ import time # time.time() для времени. Используется для
 from telethon import types
 
 lesya = 757724042  # ID бота
+name = "Bot Lesya" # Имя бота
 
 next_bonus = 0
 
@@ -13,7 +14,7 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
-		message.client.send_message(lesya, "Профиль")
+		message.client.send_message(name, "Профиль")
 
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
