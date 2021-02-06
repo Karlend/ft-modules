@@ -84,8 +84,9 @@ class AutoLesyaMod(loader.Module):
 			times["bonus"] = now + need + 60
 		# Время для работы
 		str_f = formats.get("work")
-		if (text.find(str_f) != 1):
-			pos = bonus + len(str_f) + 1 # позиция + длина + пробел	
+		work = text.find(str_f)
+		if (work != 1):
+			pos = work + len(str_f) + 1 # позиция + длина + пробел	
 			need = self.convert(text[pos:])
 			times["work"] = now + need + 10
 		# Автобой питомцев
