@@ -45,7 +45,7 @@ class AutoLesyaMod(loader.Module):
 			str = formats.get("bonus")
 			pos = text.find(str) + len(str)
 			need = text[:pos]
-			await utils.answer(message, need)
+			await utils.answer(message, need) # debug
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
 		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
