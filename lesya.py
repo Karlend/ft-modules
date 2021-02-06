@@ -18,8 +18,8 @@ class AutoLesyaMod(loader.Module):
 	async def watcher(self, message):
 		global init
 		global next_bonus
-		if not init:
-			await message.client.send_message(lesya, "Профиль")
+		if init:
+			message.client.send_message(lesya, "Профиль 2")
 			init = True
 		if not isinstance(message, types.Message):
 			return
