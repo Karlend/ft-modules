@@ -30,11 +30,11 @@ class AutoLesyaMod(loader.Module):
 		arr = str.split(":")
 		last = len(arr)
 		if last == 3: # H:M:S
-			return arr[0] * 3600 + arr[1] * 60 + arr[2]
+			return int(arr[0]) * 3600 + int(arr[1]) * 60 + int(arr[2])
 		elif last == 2:
-			return arr[0] * 60 + arr[1]
+			return int(arr[0]) * 60 + int(arr[1])
 		else:
-			return arr[0]
+			return int(arr[0])
 			
 
 	async def watcher(self, message):
