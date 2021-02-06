@@ -13,7 +13,7 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
-		client.send_message(lesya, "Профиль")
+		await client.send_message(lesya, "Профиль")
 
 	async def watcher(self, message):
 		global init
