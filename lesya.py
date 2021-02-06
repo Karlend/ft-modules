@@ -8,15 +8,15 @@ class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
 	next_bonus = 0
-	init = False
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
+		self.init = False
 
 	async def watcher(self, message):
-		if init:
-			message.client.send_message(lesya, "Профиль")
-			init = True
+		if self.init:
+			await message.client.send_message(lesya, "Профиль")
+			self.init = True
 		if not isinstance(message, types.Message):
 			return
 		chat_id = utils.get_chat_id(message)
