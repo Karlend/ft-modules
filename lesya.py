@@ -21,6 +21,7 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
+		client.send_message(lesya, "Профиль")
 
 	async def watcher(self, message):
 		global init
@@ -45,7 +46,7 @@ class AutoLesyaMod(loader.Module):
 			str = formats.get("bonus")
 			pos = text.find(str) + len(str)
 			need = text[:pos]
-			await utils.answer(message, need) # debug
+			await utils.answer(message, need)
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
 		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
