@@ -36,7 +36,7 @@ class AutoLesyaMod(loader.Module):
 			stats["clan"] = text.find("Клан: ") != 1
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
-		if (now > next_bonus) and stats.get("has"):
+		if (now > next_bonus) and stats.get("has"): # todo: Получение времени для следующего бонуса из сообщения
 			next_bonus = now + 60 * 60 * 8
 			await message.client.send_message(lesya, "Бонус")
 			if stats.get("vip"):
