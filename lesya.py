@@ -1,6 +1,7 @@
 from .. import loader, utils
 import time # time.time() для времени. Используется для промежутков бонуса, бизнеса и др
 from telethon import types
+# from telethon.tl.functions.updates import GetStateRequest
 
 lesya = 757724042  # ID бота
 init = False
@@ -11,8 +12,10 @@ times = {
 stats = {}
 
 formats = {
-	"bonus": "Вы сможете получить бонус через "
+	"bonus": "Вы сможете получить бонус через"
 }
+
+print(formats.get("bonus"))
 
 @loader.tds
 class AutoLesyaMod(loader.Module):
@@ -21,6 +24,7 @@ class AutoLesyaMod(loader.Module):
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
+		# await client(GetStateRequest())
 		await client.send_message(lesya, "Профиль")
 
 	async def watcher(self, message):
@@ -42,8 +46,8 @@ class AutoLesyaMod(loader.Module):
 			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
 			stats["work"] = text.find("Работа: ") != 1
 			stats["clan"] = text.find("Клан: ") != 1
-		if (text.find(formats.get("bonus")) != -1): # Бонус будет через n период времени
-			str = formats.get("bonus")
+		str = formats.get("bonus")
+		if (text.find(str) != -1): # Бонус будет через n период времени
 			pos = text.find(str) + len(str)
 			need = text[:pos]
 			await utils.answer(message, need)
