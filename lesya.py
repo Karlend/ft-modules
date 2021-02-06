@@ -15,8 +15,6 @@ formats = {
 	"bonus": "Вы сможете получить бонус через"
 }
 
-print(formats.get("bonus"))
-
 @loader.tds
 class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
@@ -49,7 +47,7 @@ class AutoLesyaMod(loader.Module):
 		str = formats.get("bonus")
 		if (text.find(str) != -1): # Бонус будет через n период времени
 			pos = text.find(str) + len(str)
-			need = text[:pos]
+			need = "Это:" + text[pos:]
 			await utils.answer(message, need)
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
