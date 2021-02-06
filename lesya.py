@@ -1,7 +1,6 @@
 from .. import loader, utils
 import time # time.time() для времени. Используется для промежутков бонуса, бизнеса и др
 from telethon import types
-# from telethon.tl.functions.updates import GetStateRequest
 
 lesya = 757724042  # ID бота
 init = False
@@ -22,8 +21,7 @@ class AutoLesyaMod(loader.Module):
 	strings = {"name": "LesyaBot"}
 
 	async def client_ready(self, client, db):
-		self._me = await client.get_me()	
-		# await client(GetStateRequest())
+		self._me = await client.get_me()
 		await client.send_message(lesya, "Профиль")
 
 	def convert(str):
