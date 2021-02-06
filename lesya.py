@@ -40,6 +40,7 @@ class AutoLesyaMod(loader.Module):
 	async def watcher(self, message):
 		global init
 		global times
+		now = time.time()
 		# Автосбор бонусов
 		if stats.get("has") and (now > times.get("bonus")):
 			times["bonus"] = now + 60 * 60 * 8
