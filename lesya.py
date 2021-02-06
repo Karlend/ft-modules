@@ -3,7 +3,7 @@ import time # time.time() для времени. Используется для
 from telethon import types
 
 lesya = 757724042  # ID бота
-
+init = False
 @loader.tds
 class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
@@ -14,9 +14,9 @@ class AutoLesyaMod(loader.Module):
 		self._me = await client.get_me()
 
 	async def watcher(self, message):
-		if not self._init:
+		if init:
 			message.client.send_message(lesya, "Профиль")
-			self._init = True
+			init = True
 		if not isinstance(message, types.Message):
 			return
 		chat_id = utils.get_chat_id(message)
