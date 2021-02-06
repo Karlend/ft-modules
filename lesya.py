@@ -40,6 +40,7 @@ class AutoLesyaMod(loader.Module):
 	async def watcher(self, message):
 		global init
 		global times
+		global stats
 		now = time.time()
 		# Автосбор бонусов
 		if stats.get("has") and (now > times.get("bonus")):
@@ -64,7 +65,6 @@ class AutoLesyaMod(loader.Module):
 			return
 		now = time.time()
 		if (text.find("Ваш профиль:") != -1): # Инфа по профилю привет
-			global stats
 			stats["has"] = True
 			stats["premium"] = text.find("Статус: Premium") != 1
 			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
