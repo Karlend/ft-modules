@@ -36,9 +36,9 @@ class AutoLesyaMod(loader.Module):
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
 		if (now > next_bonus):
+			next_bonus = now + 60 * 60 * 8
 			await message.client.send_message(lesya, "Бонус")
 			if stats.vip:
 				await message.client.send_message(lesya, "Вип бонус")
 			if stats.premium:
 				await message.client.send_message(lesya, "Премиум бонус")
-			next_bonus = now + 60 * 60 * 8
