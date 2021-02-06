@@ -26,7 +26,7 @@ class AutoLesyaMod(loader.Module):
 		# await client(GetStateRequest())
 		await client.send_message(lesya, "Профиль")
 
-	def convert(str)
+	def convert(str):
 		arr = str.split(":")
 		last = len(arr)
 		if last == 3: # H:M:S
@@ -40,6 +40,22 @@ class AutoLesyaMod(loader.Module):
 	async def watcher(self, message):
 		global init
 		global times
+		# Автобой питомцев
+		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
+			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
+		# Автосбор бонусов
+		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
+			times["bonus"] = now + 60 * 60 * 8
+			await message.client.send_message(lesya, "Бонус")
+			if stats.get("vip"):
+				await message.client.send_message(lesya, "Вип бонус")
+			if stats.get("premium"):
+				await message.client.send_message(lesya, "Премиум бонус")
+		if stats.get("work") and (now > times.get("work")): # todo: Получение времени для следующей работы
+			times["work"] = now + 60 * 13 # раз в 13 минут
+			for i in range(3):
+				await message.client.send_message(lesya, "Работать")
+		# Приём сообщений от бота
 		if not isinstance(message, types.Message):
 			return
 		chat_id = utils.get_chat_id(message)
@@ -68,18 +84,3 @@ class AutoLesyaMod(loader.Module):
 			need = convert(text_normal[pos:])
 			times["bonus"] = now + need
 			await utils.answer(message, "Обновил. Запущу бонус через " + need + " сек")
-		# Автобой питомцев
-		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
-			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
-		# Автосбор бонусов
-		if stats.get("has") and (now > times.get("bonus")): # todo: Получение времени для следующего бонуса из сообщения
-			times["bonus"] = now + 60 * 60 * 8
-			await message.client.send_message(lesya, "Бонус")
-			if stats.get("vip"):
-				await message.client.send_message(lesya, "Вип бонус")
-			if stats.get("premium"):
-				await message.client.send_message(lesya, "Премиум бонус")
-		if stats.get("work") and (now > times.get("work")): # todo: Получение времени для следующей работы
-			times["work"] = now + 60 * 13 # раз в 13 минут
-			for i in range(3):
-				await message.client.send_message(lesya, "Работать")
