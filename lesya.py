@@ -13,7 +13,7 @@ class AutoLesyaMod(loader.Module):
 		self._me = await client.get_me()
 
 	async def watcher(self, message):
-		if self._init == None:
+		if self._init is None:
 			await message.client.send_message(lesya, "Профиль")
 			self._init = True
 		if not isinstance(message, types.Message):
