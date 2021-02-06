@@ -31,7 +31,7 @@ class AutoLesyaMod(loader.Module):
 		last = len(arr)
 		if last == 3: # H:M:S
 			return arr[0] * 3600 + arr[1] * 60 + arr[2]
-		else if last == 2:
+		elif last == 2:
 			return arr[0] * 60 + arr[1]
 		else:
 			return arr[0]
