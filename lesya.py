@@ -6,6 +6,8 @@ import asyncio
 lesya = 757724042  # ID бота
 lesya_chat = 1462806544
 
+TLG_JOHNNY = 419089999
+
 times = {
 	"bonus": 0,
 	"work": 0
@@ -78,6 +80,7 @@ class AutoLesyaMod(loader.Module):
 		pos = entry + 1 # позиция + длина + пробел	
 		need = self.convert(text[pos:])
 		times["work"] = now + need + 5
+		print("need to wait " + str(need))
 
 	async def receive(self, message): # Сообщение от бота
 		text = message.text
@@ -96,6 +99,7 @@ class AutoLesyaMod(loader.Module):
 		entry = text.find(need)
 		if entry != -1:
 			self.parsejob(text, entry + len(need))
+			print("Parsing job")
 		# Бонус
 		need = formats.get("bonus")
 		entry = text.find(need)
@@ -113,11 +117,23 @@ class AutoLesyaMod(loader.Module):
 
 	async def receivechat(self, message): # сообщения в канале с ботом
 		text = message.text
-		if (text == "!test"):
-			await utils.answer(message, "Нормалды")
+		user_id = message.from_id or 0
+
+		if (text.find(", предметы для ограбления:") != -1) and user_id == lesya:
+			for i in range(10):
+				await self.send_bot("Предметы " + str(i + 1))
+			await utils.answer(message, "Ограбление")
+
+		if (text == "!Закуп"):
+			if user_id != TLG_JOHNNY:
+				await utils.answer(message, "Пошёл нахер. Хать фу")
+				return
+
+			for i in range(10):
+				await self.send_bot("Предметы " + str(i))
+			await utils.answer(message, "Ограбление")
 
 	async def timer(self):
-		print("Updating timer")
 		global stats
 		global times
 		if not stats.get("has"):
