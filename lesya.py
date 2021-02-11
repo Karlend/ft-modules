@@ -1,20 +1,23 @@
 from .. import loader, utils
 import time # time.time() для времени. Используется для промежутков бонуса, бизнеса и др
 from telethon import types
-# from telethon.tl.functions.updates import GetStateRequest
+import asyncio
 
 lesya = 757724042  # ID бота
-init = False
+lesya_chat = 1462806544
+
 times = {
 	"bonus": 0,
 	"work": 0
 }
+
 stats = {}
 
 formats = {
 	"bonus": "Вы сможете получить бонус через",
 	"bonus2": "бонус будет доступен через",
-	"work": "Вы сможете работать через"
+	"work": "Вы сможете работать через",
+	"id": "ID: "
 }
 
 @loader.tds
@@ -22,10 +25,15 @@ class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
 
+	async def send_bot(self, text):
+		await self._client.send_message(lesya, text)
+
 	async def client_ready(self, client, db):
-		self._me = await client.get_me()	
+		self._me = await client.get_me()
+		self._client = client
 		# await client(GetStateRequest())
-		await client.send_message(lesya, "Профиль")
+		await self.send_bot("Профиль")
+		
 
 	def convert(self, str):
 		arr = str.split(":")
@@ -36,59 +44,108 @@ class AutoLesyaMod(loader.Module):
 			return int(arr[0]) * 60 + int(arr[1][:2])
 		else:
 			return int(arr[0][:2])
-			
 
-	async def watcher(self, message):
-		global init
-		global times
+	async def parseprofile(self, text):
 		global stats
+		stats["has"] = True
+		id_format = formats.get("id")
+		id_str = text.find(id_format)
+		id_start = id_str + len(id_format)
+		id_end = text.find("\n", id_start)
+		stats["id"] = text[id_start:id_end]
+		stats["premium"] = text.find("Статус: Premium") != -1
+		stats["vip"] = (text.find("Статус: Premium") != -1) or (text.find("Статус: VIP") != -1)
+		stats["work"] = text.find("Работа: ") != -1
+		stats["clan"] = text.find("Клан: ") != -1
+		stats["bitcoin"] = text.find("Ферма: ") != -1
+		print("Got profile")
+		if not stats.get("info"):
+			await self.timer()
+
+	def parsebonus(self, text, entry):
+		if text.find("VIP") != -1 or text.find("PREMIUM") != -1:
+			return
+		global times
+
 		now = time.time()
-		# Автосбор бонусов
-		if stats.get("has") and (now > times.get("bonus")):
-			times["bonus"] = now + 60 * 60 * 8 + 60
-			await message.client.send_message(lesya, "Бонус")
-			if stats.get("vip"):
-				await message.client.send_message(lesya, "Вип бонус")
-			if stats.get("premium"):
-				await message.client.send_message(lesya, "Премиум бонус")
-		if stats.get("work") and now > times.get("work"):
-			times["work"] = now + 100
-			await message.client.send_message(lesya, "Работать")
-		if not isinstance(message, types.Message):
-			return
-		chat_id = utils.get_chat_id(message)
-		if chat_id != lesya:
-			return
+		pos = entry + 1 # позиция + длина + пробел
+		need = self.convert(text[pos:])
+		times["bonus"] = now + need + 60
+	
+	def parsejob(self, text, entry): # время для работы
+		global times
+		now = time.time()
+		pos = entry + 1 # позиция + длина + пробел	
+		need = self.convert(text[pos:])
+		times["work"] = now + need + 5
+
+	async def receive(self, message): # Сообщение от бота
 		text = message.text
-		if not text:
-			return
+		now = time.time()
+		# Инфа из профиля
 		if (text.find("Ваш профиль:") != -1): # Инфа по профилю привет
-			stats["has"] = True
-			stats["premium"] = text.find("Статус: Premium") != 1
-			stats["vip"] = (text.find("Статус: Premium") != 1) or (text.find("Статус: VIP") != 1)
-			stats["work"] = text.find("Работа: ") != 1
-			stats["clan"] = text.find("Клан: ") != 1
-		# Начало для бонуса
-		text_normal = text.replace("станет", "будет")
-		str_f = formats.get("bonus2")
-		bonus = text_normal.find(str_f)
-		if (bonus == -1):
-			str_f = formats.get("bonus")
-			bonus = text_normal.find(str_f)
-		if (bonus != -1) and (text_normal.find("VIP") == -1 and text_normal.find("PREMIUM") == -1): # Бонус будет через n период времени
-			pos = bonus + len(str_f) + 1 # позиция + длина + пробел
-			need = self.convert(text_normal[pos:])
-			times["bonus"] = now + need + 60
-		# Время для работы
-		str_f = formats.get("work")
-		work = text.find(str_f)
-		if (work != -1):
-			pos = work + len(str_f) + 1 # позиция + длина + пробел	
-			need = self.convert(text[pos:])
-			times["work"] = now + need + 5
-			#await utils.answer(message, "Пропишу через " + str(need) + " сек")
-		elif (text.find("рабочий день закончен") != -1):
-			times["work"] = now + 1
+			await self.parseprofile(text)
+		# Ещё не получил инфу
+		if not stats.get("has"):
+			return
+		# Расчёт действий
+		global times
+		text.replace("станет", "будет")
+		# Время работы
+		need = formats.get("work")
+		entry = text.find(need)
+		if entry != -1:
+			self.parsejob(text, entry + len(need))
+		# Бонус
+		need = formats.get("bonus")
+		entry = text.find(need)
+		if entry == -1:
+			need = formats.get("bonus2")
+			entry = text.find(need)
+		if entry != -1:
+			self.parsebonus(text, entry + len(need))
+		if (text.find("рабочий день закончен") != -1):
+			times["work"] = now + 60
+			await utils.answer(message, "Работать")
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
 			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
+
+	async def receivechat(self, message): # сообщения в канале с ботом
+		text = message.text
+		if (text == "!test"):
+			await utils.answer(message, "Нормалды")
+
+	async def timer(self):
+		print("Updating timer")
+		global stats
+		global times
+		if not stats.get("has"):
+			return
+		stats["info"] = True
+		global times
+		now = time.time()
+		if now > times.get("work"):
+			times["work"] = now + 100
+			await self.send_bot("Работать")
+		if now > times.get("bonus"):
+			times["bonus"] = now + 60 * 60 * 8 + 60
+			if stats.get("premium"):
+				await self.send_bot("Премиум бонус")
+			if stats.get("vip"):
+				await self.send_bot("Вип бонус")
+			await self.send_bot("Бонус")
+		await asyncio.sleep(5)
+		await self.timer()
+
+
+	async def watcher(self, message):
+		if not isinstance(message, types.Message):
+			return
+		if not message.text:
+			return
+		chat_id = utils.get_chat_id(message)
+		if chat_id == lesya:
+			await self.receive(message)
+		elif chat_id == lesya_chat:
+			await self.receivechat(message)
