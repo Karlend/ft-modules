@@ -215,7 +215,7 @@ class AutoLesyaMod(loader.Module):
 			if now > times.get("work"):
 				logger.info("TIME TO WORK")
 				logger.info(str(now) + "/" + str(times.get("work")))
-				times["work"] = now + 5
+				times["work"] = now + 60
 				asyncio.ensure_future(self.send_bot("Работать"))
 			if now > times.get("bonus"):
 				times["bonus"] = now + 60 * 60 * 8 + 60
