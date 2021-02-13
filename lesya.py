@@ -173,7 +173,8 @@ class AutoLesyaMod(loader.Module):
 		else:
 			self.parsebonus(text, entry + len(need))
 		if (text.find("рабочий день закончен") != -1):
-			times["work"] = now + 60
+			if times.get("work") < now:
+					times["work"] = now + 60
 			asyncio.ensure_future(self.send_bot("Работать"))
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
@@ -215,7 +216,8 @@ class AutoLesyaMod(loader.Module):
 			if now > times.get("work"):
 				logger.info("TIME TO WORK")
 				logger.info(str(now) + "/" + str(times.get("work")))
-				times["work"] = now + 60
+				if times.get("work") < now:
+					times["work"] = now + 60
 				asyncio.ensure_future(self.send_bot("Работать"))
 			if now > times.get("bonus"):
 				times["bonus"] = now + 60 * 60 * 8 + 60
