@@ -1,7 +1,16 @@
-from .. import loader, utils
+# requires: captcha-solver
+
 import time # time.time() для времени. Используется для промежутков бонуса, бизнеса и др
-from telethon import types
+import random
+import logging
 import asyncio
+import io
+
+from telethon import types
+from captcha_solver import CaptchaSolver
+from .. import loader, utils
+
+logger = logging.getLogger("AutoLesya")
 
 lesya = 757724042  # ID бота
 lesya_chat = 1462806544
@@ -10,7 +19,8 @@ TLG_JOHNNY = 419089999
 
 times = {
 	"bonus": 0,
-	"work": 0
+	"work": 0,
+	"fight": 10**100
 }
 
 stats = {}
@@ -22,30 +32,69 @@ formats = {
 	"id": "ID: "
 }
 
+def convert(str):
+	arr = str.split(":")
+	last = len(arr)
+	if last == 3: # H:M:S
+		return int(arr[0]) * 3600 + int(arr[1]) * 60 + int(arr[2][:2])
+	elif last == 2:
+		return int(arr[0]) * 60 + int(arr[1][:2])
+	else:
+		return int(arr[0][:2])
+
 @loader.tds
 class AutoLesyaMod(loader.Module):
 	"""Автоматизация LesyaBot"""
 	strings = {"name": "LesyaBot"}
 
 	async def send_bot(self, text):
+		await asyncio.sleep(random.randint(0, self.db_get("cooldown_time", 10)))
 		await self._client.send_message(lesya, text)
 
 	async def client_ready(self, client, db):
 		self._me = await client.get_me()
 		self._client = client
-		# await client(GetStateRequest())
-		await self.send_bot("Профиль")
-		
-
-	def convert(self, str):
-		arr = str.split(":")
-		last = len(arr)
-		if last == 3: # H:M:S
-			return int(arr[0]) * 3600 + int(arr[1]) * 60 + int(arr[2][:2])
-		elif last == 2:
-			return int(arr[0]) * 60 + int(arr[1][:2])
+		self._db = db
+		key = self.db_get("api_token")
+		if key is not None:
+			self.solver = CaptchaSolver('rucaptcha', api_key=key).solve_captcha
 		else:
-			return int(arr[0][:2])
+			def solver(raw_data):
+				key_ = self.db_get("api_token")
+				if key_ is not None:
+					self.solver = CaptchaSolver('rucaptcha', api_key=key_).solve_captcha
+					return self.solver(raw_data)
+				return False
+			self.solver = solver
+		await self.send_bot("Профиль")
+
+	async def setcaptchatokencmd(self, message):
+		"""Указать токен RuCaptcha"""
+		api_token = utils.get_args_raw(message)
+		self.db_set("api_token", api_token)
+		await utils.answer(message, "<b>Есть!</b>")
+
+	async def setcooldowncmd(self, message):
+		"""Указать время задержки между командами (в секундах, стандарт - 10)"""
+		try:
+			cd_time = int(utils.get_args_raw(message))
+		except ValueError:
+			await utils.answer(message, "<b>Ошибка, укажите время в секундах (без суффикса \"s\", просто число)</b>")
+			return
+		self.db_set("cooldown_time", cd_time)
+		await utils.answer(message, "<b>Есть!</b>")
+
+	async def solvecmd(self, message):
+		await message.edit("Ждём ответа...")
+		x = await self.solve_captcha(await message.get_reply_message())
+		await message.edit(("Ответ: "+str(x)) if x else "<b>Укажите ключ с помощью .setcaptchatoken</b>")
+
+	async def solve_captcha(self, message):
+		if not self.solver: return
+		file_loc = io.BytesIO()
+		await message.download_media(file_loc)
+		bytes_ = file_loc.getvalue()
+		return self.solver(bytes_)
 
 	async def parseprofile(self, text):
 		global stats
@@ -60,9 +109,9 @@ class AutoLesyaMod(loader.Module):
 		stats["work"] = text.find("Работа: ") != -1
 		stats["clan"] = text.find("Клан: ") != -1
 		stats["bitcoin"] = text.find("Ферма: ") != -1
-		print("Got profile")
+		logger.info("Got profile")
 		if not stats.get("info"):
-			await self.timer()
+			asyncio.ensure_future(self.timer())
 
 	def parsebonus(self, text, entry):
 		if text.find("VIP") != -1 or text.find("PREMIUM") != -1:
@@ -71,19 +120,34 @@ class AutoLesyaMod(loader.Module):
 
 		now = time.time()
 		pos = entry + 1 # позиция + длина + пробел
-		need = self.convert(text[pos:])
+		need = convert(text[pos:])
 		times["bonus"] = now + need + 60
 	
 	def parsejob(self, text, entry): # время для работы
 		global times
 		now = time.time()
 		pos = entry + 1 # позиция + длина + пробел	
-		need = self.convert(text[pos:])
+		need = convert(text[pos:])
 		times["work"] = now + need + 5
-		print("need to wait " + str(need))
+		logger.info("need to wait " + str(need))
+
+	def parsefights(self, text):
+		global times
+		if not "Лечение питомцев" in text:
+			return False
+		lines = text.split("\n")[1:]
+		times_ = []
+		for line in lines:
+			timestr = line.rsplit(" ", 1)[1]
+			if ":" in timestr:
+				times_.append(convert(timestr))
+		times["fight"] = time.time() + max(times) + 30
+		return len(times_) > 0
 
 	async def receive(self, message): # Сообщение от бота
 		text = message.text
+		if not text:
+			return
 		now = time.time()
 		# Инфа из профиля
 		if (text.find("Ваш профиль:") != -1): # Инфа по профилю привет
@@ -99,21 +163,25 @@ class AutoLesyaMod(loader.Module):
 		entry = text.find(need)
 		if entry != -1:
 			self.parsejob(text, entry + len(need))
-			print("Parsing job")
+			logger.info("Parsing job")
 		# Бонус
 		need = formats.get("bonus")
 		entry = text.find(need)
 		if entry == -1:
 			need = formats.get("bonus2")
 			entry = text.find(need)
-		if entry != -1:
+		else:
 			self.parsebonus(text, entry + len(need))
 		if (text.find("рабочий день закончен") != -1):
 			times["work"] = now + 60
-			await utils.answer(message, "Работать")
+			asyncio.ensure_future(self.send_bot("Работать"))
 		# Автобой питомцев
 		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
-			await utils.answer(message, "Бой") # todo: чек времени, когда нету стероидов
+			if not self.parsefights(text[1:]):
+				await utils.answer(message, "Бой")
+		if text.find("код картинки") != -1:
+			await self.send_bot(await self.solve_captcha(message))
+
 
 	async def receivechat(self, message): # сообщения в канале с ботом
 		text = message.text
@@ -134,26 +202,33 @@ class AutoLesyaMod(loader.Module):
 			await utils.answer(message, "Ограбление")
 
 	async def timer(self):
-		global stats
-		global times
-		if not stats.get("has"):
-			return
-		stats["info"] = True
-		global times
-		now = time.time()
-		if now > times.get("work"):
-			times["work"] = now + 100
-			await self.send_bot("Работать")
-		if now > times.get("bonus"):
-			times["bonus"] = now + 60 * 60 * 8 + 60
-			if stats.get("premium"):
-				await self.send_bot("Премиум бонус")
-			if stats.get("vip"):
-				await self.send_bot("Вип бонус")
-			await self.send_bot("Бонус")
-		await asyncio.sleep(5)
-		await self.timer()
-
+		while True:
+			global stats
+			global times
+			if not stats.get("has"):
+				logger.info("no stats")
+				return
+			logger.info("checking time")
+			stats["info"] = True
+			global times
+			now = time.time()
+			if now > times.get("work"):
+				logger.info("TIME TO WORK")
+				logger.info(str(now) + "/" + str(times.get("work")))
+				times["work"] = now + 5
+				asyncio.ensure_future(self.send_bot("Работать"))
+			if now > times.get("bonus"):
+				times["bonus"] = now + 60 * 60 * 8 + 60
+				if stats.get("premium"):
+					asyncio.ensure_future(self.send_bot("Премиум бонус"))
+				if stats.get("vip"):
+					asyncio.ensure_future(self.send_bot("Вип бонус"))
+				asyncio.ensure_future(self.send_bot("Бонус"))
+			if now > times.get("fight"):
+				logger.info("TIME TO FIGHT, BABIES")
+				asyncio.ensure_future(self.send_bot("Бой"))
+				times["fight"] = 10**100
+			await asyncio.sleep(5)
 
 	async def watcher(self, message):
 		if not isinstance(message, types.Message):
@@ -162,6 +237,12 @@ class AutoLesyaMod(loader.Module):
 			return
 		chat_id = utils.get_chat_id(message)
 		if chat_id == lesya:
-			await self.receive(message)
+			asyncio.ensure_future(self.receive(message))
 		elif chat_id == lesya_chat:
-			await self.receivechat(message)
+			asyncio.ensure_future(self.receivechat(message))
+
+	def db_set(self, key, value):
+		self._db.set(__name__, key, value)
+
+	def db_get(self, key, default=None):
+		return self._db.get(__name__, key, default)
