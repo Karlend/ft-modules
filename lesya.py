@@ -26,21 +26,24 @@ times = {
 stats = {}
 
 formats = {
-	"bonus": "Вы сможете получить бонус через",
-	"bonus2": "бонус будет доступен через",
-	"work": "Вы сможете работать через",
+	"bonus": ("бонус будет доступен", "бонус станет доступен", "сможете получить бонус"),
+	"work": "вы сможете работать через",
 	"id": "ID: "
 }
 
-def convert(str):
-	arr = str.split(":")
+def convert(str_):
+	arr = str_.split(":")
 	last = len(arr)
-	if last == 3: # H:M:S
-		return int(arr[0]) * 3600 + int(arr[1]) * 60 + int(arr[2][:2])
-	elif last == 2:
-		return int(arr[0]) * 60 + int(arr[1][:2])
-	else:
-		return int(arr[0][:2])
+	try:
+		if last == 3: # H:M:S
+			return int(arr[0]) * 3600 + int(arr[1]) * 60 + int(arr[2][:2])
+		elif last == 2:
+			return int(arr[0]) * 60 + int(arr[1][:2])
+		else:
+			return int(arr[0][:2])
+	except ValueError:
+		logger.error(f"CONVERT ERROR WHILE PARSING {str_!r}")
+		return -1
 
 @loader.tds
 class AutoLesyaMod(loader.Module):
@@ -104,85 +107,85 @@ class AutoLesyaMod(loader.Module):
 		id_start = id_str + len(id_format)
 		id_end = text.find("\n", id_start)
 		stats["id"] = text[id_start:id_end]
-		stats["premium"] = text.find("Статус: Premium") != -1
-		stats["vip"] = (text.find("Статус: Premium") != -1) or (text.find("Статус: VIP") != -1)
-		stats["work"] = text.find("Работа: ") != -1
-		stats["clan"] = text.find("Клан: ") != -1
-		stats["bitcoin"] = text.find("Ферма: ") != -1
+		stats["premium"] = "статус: premium" in text
+		stats["vip"] = "cтатус: premium" or "cтатус: vip" in text
+		stats["work"] = "работа:" in text
+		stats["clan"] = "клан:" in text
+		stats["bitcoin"] = "ферма:" in text
 		logger.info("Got profile")
 		if not stats.get("info"):
 			asyncio.ensure_future(self.timer())
 
-	def parsebonus(self, text, entry):
-		if text.find("VIP") != -1 or text.find("PREMIUM") != -1:
+	def parsebonus(self, text):
+		global times
+		if "vip" in text or "vip" in text:
 			return
-		global times
+		now = time.time()
 
-		now = time.time()
-		pos = entry + 1 # позиция + длина + пробел
-		need = convert(text[pos:])
+		timestr = text.rsplit(" ", 2)
+		if ":" not in (timestr[-1]):
+			timestr.pop(-1)
+		need = convert(timestr[-1])
 		times["bonus"] = now + need + 60
+		logger.info("need to wait " + str(need))
 	
-	def parsejob(self, text, entry): # время для работы
+	def parsejob(self, text): # время для работы
 		global times
 		now = time.time()
-		pos = entry + 1 # позиция + длина + пробел	
-		need = convert(text[pos:])
+
+		line = text.split("\n")[1]
+		timestr = line.rsplit(" ", 1)[1]
+		need = convert(timestr)
 		times["work"] = now + need + 5
 		logger.info("need to wait " + str(need))
 
 	def parsefights(self, text):
 		global times
-		if not "Лечение питомцев" in text:
+		if not "лечение питомцев" in text:
 			return False
-		lines = text.split("\n")[1:]
+		lines = text.split("\n")
+		logger.error(str(lines))
 		times_ = []
+		for _ in range(len(lines)):
+			if "лечение питомцев" in lines[0]:
+				lines.pop()
+				return
+			lines.pop()
 		for line in lines:
 			timestr = line.rsplit(" ", 1)[1]
 			if ":" in timestr:
-				times_.append(convert(timestr))
+				val = convert(timestr)
+				times_.append(val if val else 0)
 		times["fight"] = time.time() + max(times) + 30
 		return len(times_) > 0
 
 	async def receive(self, message): # Сообщение от бота
-		text = message.text
+		global times
+		text = message.text.lower()
 		if not text:
 			return
-		now = time.time()
 		# Инфа из профиля
-		if (text.find("Ваш профиль:") != -1): # Инфа по профилю привет
+		if "ваш профиль" in text: # Инфа по профилю привет
 			await self.parseprofile(text)
 		# Ещё не получил инфу
 		if not stats.get("has"):
 			return
 		# Расчёт действий
-		global times
-		text.replace("станет", "будет")
 		# Время работы
-		need = formats.get("work")
-		entry = text.find(need)
-		if entry != -1:
-			self.parsejob(text, entry + len(need))
+		if formats.get("work") in text:
+			self.parsejob(text)
 			logger.info("Parsing job")
 		# Бонус
-		need = formats.get("bonus")
-		entry = text.find(need)
-		if entry == -1:
-			need = formats.get("bonus2")
-			entry = text.find(need)
-		else:
-			self.parsebonus(text, entry + len(need))
-		if (text.find("рабочий день закончен") != -1):
-			if times.get("work") < now:
-					times["work"] = now + 60
-			asyncio.ensure_future(self.send_bot("Работать"))
+		for btext in formats.get("bonus"):
+			if btext in text:
+				self.parsebonus(text)
+				logger.info("Parsing bonus")
 		# Автобой питомцев
-		if (text.find("Ваши питомцы проиграли") != -1) or (text.find("Ваши питомцы победили") != -1): # Продолжение боя
+		if "ваши питомцы проиграли" in text or "ваши питомцы победили" in text: # Продолжение боя
 			if not self.parsefights(text[1:]):
-				await utils.answer(message, "Бой")
-		if text.find("код картинки") != -1:
+				asyncio.ensure_future(self.send_bot("Бой"))
+		if "код картинки" in text:
 			await self.send_bot(await self.solve_captcha(message))
-
 
 	async def receivechat(self, message): # сообщения в канале с ботом
 		text = message.text
@@ -204,20 +207,21 @@ class AutoLesyaMod(loader.Module):
 
 	async def timer(self):
 		while True:
+			if not self in self.allmodules.modules:
+				logger.fatal("AutoLesya unloaded. Breaking timer.")
+				break
 			global stats
 			global times
 			if not stats.get("has"):
 				logger.info("no stats")
-				return
-			logger.info("checking time")
+				continue
 			stats["info"] = True
 			global times
 			now = time.time()
-			if now > times.get("work"):
+			if now > times.get("work") and stats.get("work"):
 				logger.info("TIME TO WORK")
 				logger.info(str(now) + "/" + str(times.get("work")))
-				if times.get("work") < now:
-					times["work"] = now + 60
+				times["work"] = now + 30
 				asyncio.ensure_future(self.send_bot("Работать"))
 			if now > times.get("bonus"):
 				times["bonus"] = now + 60 * 60 * 8 + 60
@@ -237,9 +241,11 @@ class AutoLesyaMod(loader.Module):
 			return
 		if not message.text:
 			return
+		if message.from_id == self._me.id:
+			return
 		chat_id = utils.get_chat_id(message)
 		if chat_id == lesya:
-			asyncio.ensure_future(self.receive(message))
+			await self.receive(message)
 		elif chat_id == lesya_chat:
 			asyncio.ensure_future(self.receivechat(message))
 
