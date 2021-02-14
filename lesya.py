@@ -148,15 +148,15 @@ class AutoLesyaMod(loader.Module):
 		times_ = []
 		for _ in range(len(lines)):
 			if "лечение питомцев" in lines[0]:
-				lines.pop()
-				return
-			lines.pop()
+				lines.pop(0)
+				break
+			lines.pop(0)
 		for line in lines:
 			timestr = line.rsplit(" ", 1)[1]
 			if ":" in timestr:
 				val = convert(timestr)
 				times_.append(val if val else 0)
-		times["fight"] = time.time() + max(times) + 30
+		times["fight"] = time.time() + max(times_) + 30
 		return len(times_) > 0
 
 	async def receive(self, message): # Сообщение от бота
@@ -221,7 +221,7 @@ class AutoLesyaMod(loader.Module):
 			if now > times.get("work") and stats.get("work"):
 				logger.info("TIME TO WORK")
 				logger.info(str(now) + "/" + str(times.get("work")))
-				times["work"] = now + 30
+				times["work"] = now + 60
 				asyncio.ensure_future(self.send_bot("Работать"))
 			if now > times.get("bonus"):
 				times["bonus"] = now + 60 * 60 * 8 + 60
