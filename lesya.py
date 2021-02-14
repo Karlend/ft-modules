@@ -203,7 +203,7 @@ class AutoLesyaMod(loader.Module):
 				return
 
 			for i in range(10):
-				await self.send_bot("Предметы " + str(i))
+				await self.send_bot("Предметы " + str(i + 1))
 			await utils.answer(message, "Ограбление")
 
 	async def timer(self):
