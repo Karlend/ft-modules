@@ -152,10 +152,11 @@ class AutoLesyaMod(loader.Module):
 				break
 			lines.pop(0)
 		for line in lines:
-			timestr = line.rsplit(" ", 1)[1]
-			if ":" in timestr:
-				val = convert(timestr)
-				times_.append(val if val else 0)
+			if ":" in line:
+				timestr = line.rsplit(" ", 1)[1]
+				if ":" in timestr:
+					val = convert(timestr)
+					times_.append(val if val else 0)
 		times["fight"] = time.time() + max(times_) + 30
 		return len(times_) > 0
 
@@ -184,8 +185,8 @@ class AutoLesyaMod(loader.Module):
 		if "ваши питомцы проиграли" in text or "ваши питомцы победили" in text: # Продолжение боя
 			if not self.parsefights(text[1:]):
 				asyncio.ensure_future(self.send_bot("Бой"))
-		if "код картинки" in text:
-			await self.send_bot(await self.solve_captcha(message))
+		if "для продолжения введите, пожалуйста, код с картинки" in text:
+			await self._client.send_message(lesya, await self.solve_captcha(message))
 
 	async def receivechat(self, message): # сообщения в канале с ботом
 		text = message.text
