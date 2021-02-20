@@ -108,7 +108,7 @@ class AutoLesyaMod(loader.Module):
 		id_end = text.find("\n", id_start)
 		stats["id"] = text[id_start:id_end]
 		stats["premium"] = "статус: premium" in text
-		stats["vip"] = "cтатус: premium" or "cтатус: vip" in text
+		stats["vip"] = ("cтатус: premium" in text) or ("cтатус: vip" in text)
 		stats["work"] = "работа:" in text
 		stats["clan"] = "клан:" in text
 		stats["bitcoin"] = "ферма:" in text
@@ -118,7 +118,7 @@ class AutoLesyaMod(loader.Module):
 
 	def parsebonus(self, text):
 		global times
-		if "vip" in text or "vip" in text:
+		if "vip" in text or "premium" in text:
 			return
 		now = time.time()
 
@@ -189,21 +189,21 @@ class AutoLesyaMod(loader.Module):
 			await self._client.send_message(lesya, await self.solve_captcha(message))
 
 	async def receivechat(self, message): # сообщения в канале с ботом
-		text = message.text
+		text = message.text.lower()
 		user_id = message.from_id or 0
 
-		if (text.find(", предметы для ограбления:") != -1) and user_id == lesya:
+		if (", вы выбрали план №" in text) and user_id == lesya:
 			for i in range(10):
-				await self.send_bot("Предметы " + str(i + 1))
+				await self._client.send_message(lesya, "Предметы " + str(i + 1))
 			await utils.answer(message, "Ограбление")
 
-		if (text == "!Закуп"):
+		if (text == "!закуп"):
 			if user_id != TLG_JOHNNY:
 				await utils.answer(message, "Пошёл нахер. Хать фу")
 				return
 
 			for i in range(10):
-				await self.send_bot("Предметы " + str(i + 1))
+				await self._client.send_message(lesya, "Предметы " + str(i + 1))
 			await utils.answer(message, "Ограбление")
 
 	async def timer(self):
