@@ -1,10 +1,10 @@
 # requires: captcha-solver
 
-import time  # time.time() для времени. Используется для промежутков бонуса, бизнеса и др
-import random
+from time import time, strftime
+from random import randint
 import logging
 import asyncio
-import io
+from io import BytesIO
 
 from math import floor
 from datetime import timedelta
@@ -44,6 +44,8 @@ times = {
 	"cup": 0,
 	"casino": 0
 }
+
+sleep_hours = {} # {"sleep": [0, 9]}
 
 cooldowns = {
 	"bonus": 60,
@@ -157,10 +159,10 @@ class AutoLesyaMod(loader.Module):
 		time = cooldowns.get(mode)
 		if time is None:
 			time = 10
-		return random.randint(0, time)
+		return randint(0, time)
 
 	async def send_bot(self, text):
-		# await asyncio.sleep(random.randint(0, self.db_get("cooldown_time", 10)))
+		# await asyncio.sleep(randint(0, self.db_get("cooldown_time", 10)))
 		await self._client.send_message(lesya, text)
 
 	async def send_group(self, text):
@@ -189,6 +191,11 @@ class AutoLesyaMod(loader.Module):
 			if wait is None:
 				continue
 			cooldowns[mode] = wait
+		# Время сна
+		global sleep_hours
+		sleep = self.db_get("sleep_hours")
+		if sleep:
+			sleep_hours = sleep
 	
 	def solver(self, data):
 		logger.info("Получаю ключ")
@@ -202,16 +209,15 @@ class AutoLesyaMod(loader.Module):
 		self._me = await client.get_me()
 		self._client = client
 		self._db = db
+		print("Загрузка бд")
 		self.bot_loaddb()
-		await asyncio.sleep(.5)
-		await self.send_bot("Профиль")
-		await asyncio.sleep(1)
+		print("Запуск таймера")
 		asyncio.ensure_future(self.timer())
 
 	async def lbotreadycmd(self, message):
 		"""Команда для установки оптимальных настроек под бота"""
 		api_token = utils.get_args_raw(message)
-		if not api_token or api_token == "":
+		if not api_token:
 			await message.edit("<b>Нужно ввести токен RuCaptcha</b>\nВдруг капча прилетит")
 		
 		for func in best_settings:
@@ -266,6 +272,46 @@ class AutoLesyaMod(loader.Module):
 		self.set_cooldown(mode, cd_time)
 		await message.edit("<b>Есть!</b>")
 
+	async def lsleepcmd(self, message):
+		"""Время отдыха. Без аргументов - даёт инфу"""
+		global sleep_hours
+		text = utils.get_args_raw(message) or ""
+		args = text.rsplit(" ", 2)
+		if not args or not args[0]:
+			reply = "<b>😴 Время сна. Сейчас - " + str(strftime("%H")) + "</b>"
+			print(sleep_hours)
+			for name in sleep_hours:
+				hours = sleep_hours.get(name)
+				reply = reply + "\n⏰ <code>" + name + "</code>: " + str(hours[0] or 0) + "ч -> " + str(hours[1] or 0) + "ч"
+			await message.edit(reply)
+		elif len(args) == 3: # название, начало и конец
+			name = args[0]
+			if sleep_hours.get(name):
+				await message.edit("Такое имя уже есть")
+				return
+			try:
+				hour_start = int(args[1])
+				hour_end = int(args[2])
+			except:
+				await message.edit("Часы отдыха должны быть указаны числом")
+				return
+			if hour_start >= hour_end:
+				await message.edit("Первое число должно быть меньше второго ( 4, 7 - отдых от 4 до 7 утра )")
+				return
+			sleep_hours[name] = [hour_start, hour_end]
+			self.db_set("sleep_hours", sleep_hours)
+			await message.edit("Время отдыха добавлено")
+		elif len(args) == 1:
+			name = args[0]
+			if not sleep_hours.get(name):
+				await message.edit("Такого имени нету")
+				return
+			del sleep_hours[name]
+			self.db_set("sleep_hours", sleep_hours)
+			await message.edit("Время отдыха удалено")
+
+			
+
 	def settings_set(self, name, var):
 		global settings
 		settings[name] = var
@@ -300,7 +346,7 @@ class AutoLesyaMod(loader.Module):
 	async def lesyainfocmd(self, message):
 		"""Инофрмация о скрипте и инфе, какую собрал"""
 		if times.get("banned", None):
-			now = time.time()
+			now = time()
 			wait = times.get("banned") - now
 			await message.edit("<b>Я в бане\nОсталось: " + timetostr(wait) + "</b>")
 			return
@@ -308,7 +354,7 @@ class AutoLesyaMod(loader.Module):
 			await message.edit("<b>Информация не найдена</b>")
 			return
 
-		now = time.time()
+		now = time()
 		text = "<b>Инфа в Бот Леся</b>" + "\n" \
 			"☺️ Мой айди - <code>" + str(stats.get("id")) + "</code>\n" \
 			"🤔 Статус: " + (stats.get("premium") and "Premium" or stats.get("vip") and "VIP" or "Игрок") + "\n" \
@@ -321,8 +367,7 @@ class AutoLesyaMod(loader.Module):
 		if stats.get("premium"):
 			text = text + "💸 Премиум бонус: " + timetostr(times.get("premium_bonus") - now) + "\n"
 			text = text + "🤑 Премиум валюта: " + timetostr(times.get("premium_money") - now) + "\n"
-		if times.get("work") > 0:
-			text = text + "🛠️ Работа: " + timetostr(times.get("work") - now) + "\n"
+		text = text + "🛠️ Работа: " + timetostr(times.get("work") - now) + "\n"
 		battle = times.get("fight") - now
 		if battle < 10**50:
 			text = text + "🤺 Бои: " + timetostr(battle) + "\n"
@@ -350,7 +395,7 @@ class AutoLesyaMod(loader.Module):
 			logger.info("no self.solver")
 			return
 		logger.info("creating io data")
-		file_loc = io.BytesIO()
+		file_loc = BytesIO()
 		logger.info("downloading file")
 		logger.info(message)
 		await message.download_media(file_loc)
@@ -381,7 +426,7 @@ class AutoLesyaMod(loader.Module):
 		vip = "v.i.p" in text
 		premium = "premium" in text
 		bonus_type = vip and "vip_bonus" or premium and "premium_bonus" or "bonus"
-		now = time.time()
+		now = time()
 
 		timestr = text.rsplit(" ", 2)
 		if ":" not in (timestr[-1]):
@@ -394,7 +439,7 @@ class AutoLesyaMod(loader.Module):
 		logger.info("parsing money bonus")
 		logger.info(text)
 		global times
-		now = time.time()
+		now = time()
 
 		timestr = text.rsplit(" ", 2)
 		if ":" not in (timestr[-1]):
@@ -405,7 +450,7 @@ class AutoLesyaMod(loader.Module):
 
 	def parsejob(self, text):  # время для работы
 		global times
-		now = time.time()
+		now = time()
 
 		line = text.split("\n")[1]
 		timestr = line.rsplit(" ", 1)[1]
@@ -446,11 +491,11 @@ class AutoLesyaMod(loader.Module):
 					val = convert(timestr)
 					times_.append(val if val else 0)
 		logger.info("Calculated fight time")
-		self.set_time("fight", time.time() + max(times_) + 2 + self.gen_time("fight"))
+		self.set_time("fight", time() + max(times_) + 2 + self.gen_time("fight"))
 		return len(times_) > 0
 
 	def get_bitcoins(self):
-		now = time.time()
+		now = time()
 		if not settings.get("pet_bitcoin") or times.get("pet_bitcoin") > now:
 			return
 		self.set_time("pet_bitcoin", now + 60 * 61)
@@ -574,12 +619,13 @@ class AutoLesyaMod(loader.Module):
 		return arr
 
 	async def lpetscmd(self, message):
+		"""Список питомцев. Сортировка по урону"""
 		global stats
 		if not stats.get("has"):
 			asyncio.ensure_future(message.edit("Нету инфы о профиле"))
 			return
 		stats["pets_waiting"] = message
-		stats["pets_parsed"] = None
+		del stats["pets_parsed"]
 		asyncio.ensure_future(message.edit("Жду инфу от бота"))
 		asyncio.ensure_future(self.send_bot("Питомцы"))
 
@@ -587,7 +633,7 @@ class AutoLesyaMod(loader.Module):
 		global times
 		global stats
 		text = message.text.lower()
-		now = time.time()
+		now = time()
 		if not text:
 			return
 		if "[💎] premium" in text:
@@ -644,7 +690,7 @@ class AutoLesyaMod(loader.Module):
 				self.parsenewjob(text)
 			elif stats.get("new_job") and ", профессии" in text:
 				logger.info("looking job in job list")
-				stats["new_job"] = None
+				del stats["new_job"]
 				self.parsenewjob(text)
 			elif ", вы нигде не работаете" in text:
 				stats["new_job"] = True
@@ -655,8 +701,8 @@ class AutoLesyaMod(loader.Module):
 			msg = stats.get("pets_waiting")
 			if ", у вас нет питомцев" in text:
 				asyncio.ensure_future(msg.edit("Питомцев нету"))
-				stats["pets_waiting"] = None
-				stats["pets_parsed"] = None
+				del stats["pets_waiting"]
+				del stats["pets_parsed"]
 			elif ", страница " in text:
 				line = text.split("\n")[0]
 				page_info = line.rsplit(" ", 1)[1]
@@ -668,8 +714,8 @@ class AutoLesyaMod(loader.Module):
 					for info in arr:
 						reply = reply + "\n" + "🆔 " + info.get("ID") + " | ❤️ " + str(info.get("HP")) + " | 🔫 " + str(info.get("DMG"))
 					asyncio.ensure_future(msg.edit(reply))
-					stats["pets_waiting"] = None
-					stats["pets_parsed"] = None
+					del stats["pets_waiting"]
+					del stats["pets_parsed"]
 				else:
 					arr = self.pets_parse(text)
 					stats["pets_parsed"] = arr
@@ -692,7 +738,7 @@ class AutoLesyaMod(loader.Module):
 		# Автозакуп для ограблений
 		if stats.get("need_to_buy") and ", предметы для ограбления:" in text:
 			msg = stats.get("need_to_buy")
-			stats["need_to_buy"] = None
+			del stats["need_to_buy"]
 			lines = text.split("\n")
 			for line in lines:
 				dot = line.find(".")
@@ -701,7 +747,7 @@ class AutoLesyaMod(loader.Module):
 			await msg.reply("Ограбление")
 		elif stats.get("need_to_buy") and ", этот раздел доступен только участникам клана" in text:
 			msg = stats.get("need_to_buy")
-			stats["need_to_buy"] = None
+			del stats["need_to_buy"]
 			await msg.reply("Дурак, меня в клане нету")
 
 		# Автобой питомцев
@@ -802,7 +848,7 @@ class AutoLesyaMod(loader.Module):
 				if "📦 ваши кейсы:" in text:
 					stats["opencase"] = self.case_parse(text)
 				else:
-					stats["opencase"] = None
+					del stats["opencase"]
 			elif "📦 ваши кейсы:" in text:
 				# Нужно спарсить кейсы
 				times["opencase"] = now + self.gen_time("opencase")
@@ -843,7 +889,7 @@ class AutoLesyaMod(loader.Module):
 
 		if times.get("banned", None):
 			if (text == "!бан"):
-				now = time.time()
+				now = time()
 				wait = times.get("banned") - now
 				await utils.answer(message, "Осталось " + timetostr(wait))
 			return
@@ -869,7 +915,7 @@ class AutoLesyaMod(loader.Module):
 				break
 			global stats
 			global times
-			now = time.time()
+			now = time()
 			if times.get("banned", None):
 				if now > times.get("banned"):
 					self.set_time("banned", 0)
@@ -886,17 +932,24 @@ class AutoLesyaMod(loader.Module):
 				await asyncio.sleep(1)
 				continue
 
+			hour = int(strftime("%H"))
+			sleep = False
+			for sleep_name in sleep_hours:
+				hours = sleep_hours.get(sleep_name)
+				if hour >= hours[0] and hour <= hours[1]:
+					sleep = True
+
 			stats["info"] = True
 
 			# Работа
-			if settings.get("work") and now > times.get("work"):
+			if settings.get("work") and now > times.get("work") and not sleep:
 				logger.info("Time to Work")
 				times["work"] = now + 30
 				asyncio.ensure_future(self.send_bot("Работать"))
 
 
 			# Бонусы
-			if settings.get("bonus"):
+			if settings.get("bonus") and not sleep:
 				if now > times.get("bonus"):
 					logger.info("Getting bonus")
 					times["bonus"] = now + 600
@@ -915,23 +968,23 @@ class AutoLesyaMod(loader.Module):
 					asyncio.ensure_future(self.send_bot("Премиум валюта"))
 
 			# Автозакуп для питомцев
-			if settings.get("pet_stimulator") and now > times.get("pet_stimulator"):
+			if settings.get("pet_stimulator") and now > times.get("pet_stimulator") and not sleep:
 				self.set_time("pet_stimulator", now + 60 * 60 * 24)
 				self.get_bitcoins()
 				asyncio.ensure_future(self.send_bot("Зоотовары 6"))
 
-			if settings.get("pet_food") and now > times.get("pet_food"):
+			if settings.get("pet_food") and now > times.get("pet_food") and not sleep:
 				self.set_time("pet_food", now + 60 * 60 * 24)
 				self.get_bitcoins()
 				asyncio.ensure_future(self.send_bot("Зоотовары 7"))
 
-			if settings.get("pet_cases") and now > times.get("pet_cases"):
+			if settings.get("pet_cases") and now > times.get("pet_cases") and not sleep:
 				self.set_time("pet_cases", now + 60 * 60 * 24)
 				self.get_bitcoins()
 				asyncio.ensure_future(self.send_bot("Зоотовары 8"))
 
 			# Автобой
-			if settings.get("fight") and now > times.get("fight"):
+			if settings.get("fight") and now > times.get("fight") and not sleep:
 				times["fight"] = now + 30
 				logger.info("Starting new battle")
 				asyncio.ensure_future(self.send_bot("Бой"))
@@ -949,7 +1002,7 @@ class AutoLesyaMod(loader.Module):
 					asyncio.ensure_future(self.send_bot("КВ"))
 
 			# Автооткрытие кейсов
-			if settings.get("opencase") and now > times.get("opencase") and stats.get("opencase"):
+			if settings.get("opencase") and now > times.get("opencase") and stats.get("opencase") and not sleep:
 				case = stats.get("opencase")
 				times["opencase"] = now + self.gen_time("opencase")
 				if stats.get("opencase_limit"):
@@ -958,17 +1011,17 @@ class AutoLesyaMod(loader.Module):
 					asyncio.ensure_future(self.send_bot("Кейс открыть " + str(case) + " 10"))
 
 			# Если есть апгрейд города - метод поднятия денег и вывода в топ и себя и клана
-			if settings.get("auto_trade") and now > times.get("trade"):
+			if settings.get("auto_trade") and now > times.get("trade") and not sleep:
 				times["trade"] = now + 5
-				side = random.randint(0, 1) == 1 and "вверх" or "вниз"
+				side = randint(0, 1) == 1 and "вверх" or "вниз"
 				asyncio.ensure_future(self.send_bot("Трейд " + side + " все"))
 
-			if settings.get("auto_cup") and now > times.get("cup"):
+			if settings.get("auto_cup") and now > times.get("cup") and not sleep:
 				times["cup"] = now + 5
-				side = str(random.randint(1, 3))
+				side = str(randint(1, 3))
 				asyncio.ensure_future(self.send_bot("Стаканчик " + side + " все"))
 
-			if settings.get("auto_casino") and now > times.get("casino"):
+			if settings.get("auto_casino") and now > times.get("casino") and not sleep:
 				times["casino"] = now + 5
 				asyncio.ensure_future(self.send_bot("Казино все"))
 			await asyncio.sleep(1)
