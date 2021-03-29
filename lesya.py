@@ -810,7 +810,7 @@ class AutoLesyaMod(loader.Module):
 			elif ", вы начали поиск противника!" in text:
 				self.set_time("clan_war", now + 1800)
 			elif ", война кланов начата!" in text: # Подготовка или уже сражение
-				if "до конца отборочного этапа:" in text: # Идёт сбор питомцев с боёв. Нужно сделать автораспределение очков
+				if "до конца отборочного этапа:" in text or "до окончания отборочного этапа" in text: # Идёт сбор питомцев с боёв. Нужно сделать автораспределение очков
 					line = text.split("\n")[-1]
 					timestr = line.rsplit(" ", 1)[1]
 					if timestr and ":" in timestr:
