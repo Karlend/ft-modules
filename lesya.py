@@ -209,9 +209,7 @@ class AutoLesyaMod(loader.Module):
 		self._me = await client.get_me()
 		self._client = client
 		self._db = db
-		print("Загрузка бд")
 		self.bot_loaddb()
-		print("Запуск таймера")
 		asyncio.ensure_future(self.timer())
 
 	async def lbotreadycmd(self, message):
@@ -223,6 +221,8 @@ class AutoLesyaMod(loader.Module):
 		for func in best_settings:
 			should = best_settings.get(func)
 			self.settings_set(func, should)
+
+		self.db_set("api_token", api_token)
 
 		await message.edit("<b>Применены адаптивные бот-настройки</b>")
 
@@ -279,7 +279,6 @@ class AutoLesyaMod(loader.Module):
 		args = text.rsplit(" ", 2)
 		if not args or not args[0]:
 			reply = "<b>😴 Время сна. Сейчас - " + str(strftime("%H")) + "</b>"
-			print(sleep_hours)
 			for name in sleep_hours:
 				hours = sleep_hours.get(name)
 				reply = reply + "\n⏰ <code>" + name + "</code>: " + str(hours[0] or 0) + "ч -> " + str(hours[1] or 0) + "ч"
@@ -386,6 +385,11 @@ class AutoLesyaMod(loader.Module):
 				text = text + "🦽 Апгрейд питомцев: " + timetostr(times.get("clan_war_upgrade") - now) + "\n"
 		if settings.get("clan_heist"):
 			text = text + "🔫 Ограбление: " + timetostr(times.get("clan_heist") - now) + "\n"
+		hour = int(strftime("%H"))
+		for sleep_name in sleep_hours:
+			hours = sleep_hours.get(sleep_name)
+			if hour >= hours[0] and hour <= hours[1]:
+				text = text + "😴 <b>Сейчас сплю ( " + sleep_name + " ). Ещё " + str(hours[1] - hour) + "ч</b>"
 		if self.db_get("api_token") == None:
 			text = text + "⚠️ <b>Токен капчи не указан</b>"
 		await message.edit(text)
@@ -625,7 +629,7 @@ class AutoLesyaMod(loader.Module):
 			asyncio.ensure_future(message.edit("Нету инфы о профиле"))
 			return
 		stats["pets_waiting"] = message
-		del stats["pets_parsed"]
+		stats["pets_parsed"] = []
 		asyncio.ensure_future(message.edit("Жду инфу от бота"))
 		asyncio.ensure_future(self.send_bot("Питомцы"))
 
