@@ -282,6 +282,7 @@ class AutoLesyaMod(loader.Module):
 			for name in sleep_hours:
 				hours = sleep_hours.get(name)
 				reply = reply + "\n⏰ <code>" + name + "</code>: " + str(hours[0] or 0) + "ч -> " + str(hours[1] or 0) + "ч"
+			reply = reply + "\n\n<b>Для добавления времени - </b><code>.lsleep название час_начало час_конец</code>\n<b>Для удаления - </b><code>.lsleep название</code>"
 			await message.edit(reply)
 		elif len(args) == 3: # название, начало и конец
 			name = args[0]
@@ -308,6 +309,8 @@ class AutoLesyaMod(loader.Module):
 			del sleep_hours[name]
 			self.db_set("sleep_hours", sleep_hours)
 			await message.edit("Время отдыха удалено")
+		else:
+			await message.edit("Неверный формат команды. <code>.lsleep название час_начало час_конец</code>")
 
 			
 
@@ -674,6 +677,9 @@ class AutoLesyaMod(loader.Module):
 			return
 		# Расчёт действий
 
+		if ", вы вступили в клан" in text:
+			stats["clan"] = True
+
 		# Модуль работы
 		# Время работы
 		if formats.get("work") in text:
@@ -814,7 +820,9 @@ class AutoLesyaMod(loader.Module):
 			elif ", вы начали поиск противника!" in text:
 				self.set_time("clan_war", now + 1800)
 			elif ", война кланов начата!" in text: # Подготовка или уже сражение
-				if "до конца отборочного этапа:" in text or "до окончания отборочного этапа" in text: # Идёт сбор питомцев с боёв. Нужно сделать автораспределение очков
+				if "примерное время до окончания отборочного этапа:" in text:
+					self.set_time("clan_war", now + 3600)
+				elif "до конца отборочного этапа:" in text: # Идёт сбор питомцев с боёв. Нужно сделать автораспределение очков
 					line = text.split("\n")[-1]
 					timestr = line.rsplit(" ", 1)[1]
 					if timestr and ":" in timestr:
@@ -898,7 +906,7 @@ class AutoLesyaMod(loader.Module):
 				await utils.answer(message, "Осталось " + timetostr(wait))
 			return
 
-		if (", вы выбрали план №" in text) and stats.get("clan_buy") and user_id == lesya and stats.get("clan"):
+		if (", вы выбрали план №" in text) and settings.get("clan_buy") and stats.get("clan") and user_id == lesya:
 			stats["need_to_buy"] = message
 			await self.send_bot("Предметы")
 
